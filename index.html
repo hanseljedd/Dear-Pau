@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For My Dear Pau</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #FFFBB3;
+            overflow-x: hidden;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #FFFBB3;
+            padding: 15px;
+            z-index: 100;
+            border-bottom: 3px solid #8b4513;
+        }
+
+        .title {
+            text-align: center;
+            font-size: clamp(1.5em, 5vw, 2.5em);
+            color: #8b4513;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 0 rgba(205, 92, 92, 0.2);
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #cd5c5c;
+            font-size: clamp(0.75em, 2.5vw, 0.9em);
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .search-container {
+            max-width: 500px;
+            margin: 0 auto;
+            position: relative;
+            padding: 0 10px;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid #8b4513;
+            background: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: clamp(14px, 3vw, 16px);
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .search-bar:focus {
+            border-color: #cd5c5c;
+            box-shadow: 0 0 0 3px rgba(205, 92, 92, 0.2);
+        }
+
+        .board {
+            margin-top: 160px;
+            padding: 20px 10px;
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+
+        .board-container {
+            position: relative;
+            width: 100%;
+            max-width: 1400px;
+        }
+
+        .letter-card {
+            position: absolute;
+            width: 100%;
+            max-width: 280px;
+            background: #fff;
+            border: 2px solid #8b4513;
+            box-shadow: 5px 5px 0 rgba(139, 69, 19, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .letter-card:hover {
+            transform: scale(1.05) rotate(0deg) !important;
+            box-shadow: 8px 8px 0 rgba(205, 92, 92, 0.4);
+            z-index: 50;
+        }
+
+        .letter-card.highlighted {
+            border-color: #cd5c5c;
+            border-width: 3px;
+            animation: pulse 1s ease-in-out 3;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        /* Letter with text */
+        .letter-content {
+            padding: 20px;
+        }
+
+        /* Letter with image */
+        .letter-card.image-letter {
+            padding: 0;
+        }
+
+        .letter-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .letter-image.loaded {
+            opacity: 1;
+        }
+
+        /* Loading placeholder */
+        .letter-image:not(.loaded) {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .image-caption {
+            padding: 15px;
+            background: #fff;
+        }
+
+        .letter-date {
+            font-size: 0.9em;
+            color: #8b4513;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .letter-title {
+            font-size: 1.3em;
+            color: #cd5c5c;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+
+        .letter-preview {
+            color: #5a5a5a;
+            line-height: 1.6;
+            font-size: 0.95em;
+            max-height: 150px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .letter-preview::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background: linear-gradient(transparent, #fff);
+        }
+
+        .letter-type-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #cd5c5c;
+            color: #fff;
+            padding: 4px 10px;
+            font-size: 0.75em;
+            border-radius: 3px;
+            letter-spacing: 1px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 200;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            max-width: 700px;
+            margin: 20px auto;
+            background: #fff;
+            border: 3px solid #8b4513;
+            padding: 25px;
+            position: relative;
+            box-shadow: 10px 10px 0 rgba(139, 69, 19, 0.3);
+        }
+
+        .modal-content.image-modal {
+            max-width: 900px;
+        }
+
+        .modal-image {
+            width: 100%;
+            max-height: 500px;
+            object-fit: contain;
+            margin-bottom: 25px;
+            border: 2px solid #8b4513;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 30px;
+            color: #8b4513;
+            cursor: pointer;
+            background: #FFFBB3;
+            border: 2px solid #8b4513;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .close-btn:hover {
+            background: #cd5c5c;
+            color: #fff;
+            transform: rotate(90deg);
+        }
+
+        .modal-date {
+            color: #8b4513;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .modal-title {
+            font-size: clamp(1.3em, 4vw, 2em);
+            color: #cd5c5c;
+            margin-bottom: 20px;
+            line-height: 1.3;
+        }
+
+        .modal-body {
+            color: #333;
+            line-height: 1.8;
+            font-size: clamp(0.95em, 2.5vw, 1.05em);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .no-results {
+            text-align: center;
+            color: #8b4513;
+            font-size: 1.2em;
+            margin-top: 50px;
+            display: none;
+        }
+
+        /* Polaroid style for image letters */
+        .letter-card.polaroid {
+            background: #fff;
+            padding: 15px;
+            padding-bottom: 50px;
+        }
+
+        .letter-card.polaroid .letter-image {
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+        }
+
+        .polaroid-text {
+            text-align: center;
+            color: #8b4513;
+            font-size: 1em;
+            margin-top: -35px;
+        }
+
+        /* Postcard style */
+        .letter-card.postcard {
+            background: linear-gradient(to right, #fff 50%, #f9f9f9 50%);
+        }
+
+        .postcard-front {
+            padding: 15px;
+        }
+
+        /* Decorative corner */
+        .corner-decoration {
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            width: 40px;
+            height: 40px;
+            background: #cd5c5c;
+            clip-path: polygon(0 0, 100% 0, 0 100%);
+            opacity: 0.7;
+        }
+
+        @media (max-width: 768px) {
+            .board {
+                margin-top: 140px;
+                padding: 15px 5px;
+            }
+
+            .letter-card {
+                max-width: calc(50% - 15px);
+            }
+            
+            .title {
+                letter-spacing: 1px;
+            }
+
+            .modal {
+                padding: 10px;
+            }
+
+            .modal-content {
+                padding: 20px;
+                margin: 10px auto;
+            }
+
+            .close-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 25px;
+            }
+
+            .letter-type-badge {
+                font-size: 0.65em;
+                padding: 3px 8px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 10px;
+            }
+
+            .board {
+                margin-top: 130px;
+            }
+
+            .letter-card {
+                max-width: calc(100% - 20px);
+            }
+
+            .letter-content {
+                padding: 15px;
+            }
+
+            .letter-title {
+                font-size: 1.1em;
+            }
+
+            .letter-preview {
+                font-size: 0.9em;
+                max-height: 120px;
+            }
+
+            .modal-content {
+                padding: 15px;
+                border-width: 2px;
+            }
+
+            .modal-image {
+                max-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="title">For My Dear Pau ♡</h1>
+        <div class="subtitle">A collection of moments & memories</div>
+        <div class="search-container">
+            <input type="text" class="search-bar" placeholder="Search letters, dates, or memories..." id="searchBar">
+        </div>
+    </div>
+
+    <div class="board" id="board">
+        <div class="board-container" id="boardContainer"></div>
+    </div>
+    <div class="no-results" id="noResults">No letters found</div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content" id="modalContent">
+            <button class="close-btn" id="closeBtn">×</button>
+            <div class="modal-date" id="modalDate"></div>
+            <h2 class="modal-title" id="modalTitle"></h2>
+            <div id="modalImageContainer"></div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        // Add your letters here!
+        // For IMAGE letters: add type: 'image' and image: 'URL'
+        // For TEXT letters: just use title and content
+        const letters = [
+            {
+                date: "July 7, 2024",
+                title: "The First Hello",
+                type: "text",
+                content: `My dearest (yes, already),
+
+I've never imagined I'd be able to finally chat with you through your IG story. I never thought a simple message would take so much courage.
+
+I thought it would be a scary story waiting to unfold, yet the moment you replied, I felt this warm rush spread through my chest.
+
+Everything felt light, like I was floating.
+
+With all my heart,
+Already yours`
+            },
+            {
+                date: "July 10, 2024",
+                title: "Red",
+                type: "image",
+                image: "images/july1024.jpg",
+                content: `You think you're pretty, huh? Well you are!`
+            },
+            {
+                date: "Aug 3, 2024",
+                title: "Sight",
+                type: "text",
+                content: `My dearest (yes, already),
+
+God I want to see you.
+
+With all my heart,
+Already yours`
+            },
+            {
+                date: "Aug 26, 2024",
+                title: "Somber",
+                type: "image",
+                image: "images/aug2624.jpg",
+                content: `This playlist good.`
+            },
+            {
+                date: "Sep 12, 2024",
+                title: "Idea",
+                type: "image",
+                image: "images/sept1224.jpg",
+                content: `Got it.`
+            },
+            {
+                date: "Nov 10, 2024",
+                title: "21st",
+                type: "text",
+                content: `Dear Birthday Girl,
+
+I've never met someone who is so perfectly my favorite person.
+
+I think you're pretty. I think you're really pretty. I think you're pretty like a snowflake in a winter afternoon. And for the first ten months I've admired you, I kept thinking I like you.
+
+But saying that out loud, it might be too soon. But by the time you read this it's not.
+
+I don't know what the future hold. I don't know what's going to happen.
+
+But one thing I know is that I'll never stop liking you. And wanting you.
+
+And tomorrow might be scary but to face it with you makes it a little more bearable.
+
+With all my heart,
+Denzel`
+            },
+            {
+                date: "Jan 1, 2025",
+                title: "Still",
+                type: "text",
+                content: `Happy New Year!`
+            },
+            {
+                date: "Jan 9, 2025",
+                title: "NIKI",
+                type: "text",
+                content: `Dear Pau,
+
+Wanna watch THE NIKI concert with me? Please say yes :>
+
+With all my heart,
+Denzel`
+            },
+            {
+                date: "Jan 11, 2025",
+                title: "Lidia",
+                type: "image",
+                image: "images/jan1125.jpg",
+                content: `I love this series!`
+            },
+            {
+                date: "Sept 25, 2025",
+                title: "Test",
+                type: "text",
+                content: `My dearest,
+
+I just got this idea of creating a letter website for you. It might take a while to finish it with all these review materials. 
+
+But here goes nothing.
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For My Dear Pau</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #FFFBB3;
+            overflow-x: hidden;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #FFFBB3;
+            padding: 15px;
+            z-index: 100;
+            border-bottom: 3px solid #8b4513;
+
+With all my heart,
+Already yours  `
+            },
+            {
+                date: "Dec 23, 2025",
+                title: "Confession",
+                type: "image",
+                image: "images/dec2325.jpg",
+                content: `Should ~ no, can I?`
+            },
+            {
+                date: "Dec 24, 2025",
+                title: "AAAAAAAA",
+                type: "text",
+                content: `My Dearest Pau,
+
+Merry Christmas indeed!
+
+"I wish you knew how many times I've reread this—carefully, making sure I didn't miss a word or misinterpret a single thing. It's poetic how someone can think of me this way, and for that, I am deeply grateful. I think it's also fitting that I address this now, and I want to apologize for my countless attempts to push you away. I confessed my feelings for you before but I was a coward for running away from it when I sensed the danger that comes with falling for someone again. Despite all of that, you're still here, and that's something I truly admire. At the same time, I also want you to know that I'm fully focused on chasing my dreams in the coming years. That means everything else, aside from my dreams, comes second to my priorities. I guess all I'm trying to say is that I like you, but I am wedded to my goals for now. I hope you don't take this as me saying no or pushing you away, just that I'm being careful. So yes, I'd love to hang out. Just let me know when and where so I can free up my schedule. Merry Christmas, Denzel!"
+
+With all my heart,
+Still yours`
+            },
+            {
+                date: "Jan 1, 2026",
+                title: "Still (1)",
+                type: "text",
+                content: `Happy New Year!`
+            },
+            {
+                date: "Jan 10, 2026",
+                title: "Finally",
+                type: "image",
+                image: "images/jan1026.jpg",
+                content: `I'm counting this as a date!`
+            },
+            {
+                date: "Jan 12, 2026",
+                title: "Kobe",
+                type: "image",
+                image: "images/jan1226.jpg",
+                content: `Guys, I'm winning`
+            },
+            {
+                date: "Jan 18, 2026",
+                title: "Dream",
+                type: "text",
+                content: `"dream of me~"
+
+Ayaw magpatulog?`
+            },
+            {
+                date: "Jan 20, 2026",
+                title: "Queen",
+                type: "image",
+                image: "images/jan2026.jpg",
+                content: `You're so cute!`
+            },
+
+        ];
+
+        const board = document.getElementById('board');
+        const boardContainer = document.getElementById('boardContainer');
+        const searchBar = document.getElementById('searchBar');
+        const modal = document.getElementById('modal');
+        const closeBtn = document.getElementById('closeBtn');
+        const noResults = document.getElementById('noResults');
+        const modalContent = document.getElementById('modalContent');
+
+        let letterElements = [];
+
+        // Position letters in a Pinterest-style layout
+        function positionLetters() {
+            const isMobile = window.innerWidth <= 480;
+            const isTablet = window.innerWidth <= 768 && window.innerWidth > 480;
+            
+            let columns, cardWidth, gap;
+            
+            if (isMobile) {
+                columns = 1;
+                cardWidth = window.innerWidth - 30;
+                gap = 15;
+            } else if (isTablet) {
+                columns = 2;
+                cardWidth = (window.innerWidth - 60) / 2;
+                gap = 20;
+            } else {
+                columns = 4;
+                cardWidth = 280;
+                gap = 30;
+            }
+            
+            const columnHeights = new Array(columns).fill(0);
+            const totalWidth = (columns * cardWidth) + ((columns + 1) * gap);
+            boardContainer.style.width = totalWidth + 'px';
+
+            letters.forEach((letter, index) => {
+                const card = document.createElement('div');
+                card.className = 'letter-card';
+                
+                // Add corner decoration randomly
+                if (Math.random() > 0.7) {
+                    card.innerHTML += '<div class="corner-decoration"></div>';
+                }
+
+                if (letter.type === 'image') {
+                    // Image letter with lazy loading
+                    card.classList.add('image-letter', 'polaroid');
+                    card.innerHTML += `
+                        <img data-src="${letter.image}" alt="${letter.title}" class="letter-image" />
+                        <div class="image-caption">
+                            <div class="letter-date">${letter.date}</div>
+                            <div class="letter-title">${letter.title}</div>
+                        </div>
+                        <div class="letter-type-badge">📷 PHOTO</div>
+                    `;
+                } else {
+                    // Text letter
+                    card.innerHTML += `
+                        <div class="letter-content">
+                            <div class="letter-date">${letter.date}</div>
+                            <div class="letter-title">${letter.title}</div>
+                            <div class="letter-preview">${letter.content.substring(0, 150)}...</div>
+                        </div>
+                        <div class="letter-type-badge">✉️ LETTER</div>
+                    `;
+                }
+
+                // Find shortest column
+                const shortestColumn = columnHeights.indexOf(Math.min(...columnHeights));
+                const x = shortestColumn * (cardWidth + gap) + gap;
+                const y = columnHeights[shortestColumn] + gap;
+
+                // Add slight random rotation for retro effect (less on mobile)
+                const rotation = isMobile ? 0 : (Math.random() - 0.5) * 4;
+                card.style.left = x + 'px';
+                card.style.top = y + 'px';
+                card.style.transform = `rotate(${rotation}deg)`;
+                card.style.width = cardWidth + 'px';
+
+                // Update column height (image letters are taller)
+                const cardHeight = letter.type === 'image' ? 320 : 270;
+                columnHeights[shortestColumn] += cardHeight;
+
+                card.addEventListener('click', () => openModal(letter));
+                
+                card.dataset.searchText = `${letter.date} ${letter.title} ${letter.content}`.toLowerCase();
+                
+                boardContainer.appendChild(card);
+                letterElements.push(card);
+            });
+
+            // Set board container height
+            boardContainer.style.height = Math.max(...columnHeights) + 100 + 'px';
+        }
+
+        function openModal(letter) {
+            document.getElementById('modalDate').textContent = letter.date;
+            document.getElementById('modalTitle').textContent = letter.title;
+            
+            const imageContainer = document.getElementById('modalImageContainer');
+            
+            if (letter.type === 'image') {
+                modalContent.classList.add('image-modal');
+                imageContainer.innerHTML = `<img src="${letter.image}" alt="${letter.title}" class="modal-image" />`;
+            } else {
+                modalContent.classList.remove('image-modal');
+                imageContainer.innerHTML = '';
+            }
+            
+            document.getElementById('modalBody').textContent = letter.content;
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        closeBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        // Search functionality
+        searchBar.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            let visibleCount = 0;
+
+            letterElements.forEach(card => {
+                const matches = card.dataset.searchText.includes(searchTerm);
+                
+                if (matches) {
+                    card.style.display = 'block';
+                    visibleCount++;
+                    
+                    if (searchTerm && searchTerm.length > 2) {
+                        card.classList.add('highlighted');
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else {
+                        card.classList.remove('highlighted');
+                    }
+                } else {
+                    card.style.display = 'none';
+                    card.classList.remove('highlighted');
+                }
+            });
+
+            noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+        });
+
+        // Lazy loading for images
+        function lazyLoadImages() {
+            const imageCards = document.querySelectorAll('.letter-image');
+            
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        img.src = img.dataset.src;
+                        img.classList.add('loaded');
+                        observer.unobserve(img);
+                    }
+                });
+            });
+
+            imageCards.forEach(img => imageObserver.observe(img));
+        }
+
+        // Virtual scrolling - only render visible letters
+        let allLetterData = [];
+        
+        function initializeBoard() {
+            allLetterData = [...letters];
+            positionLetters();
+            lazyLoadImages();
+        }
+
+        // Initialize
+        initializeBoard();
+
+        // Reposition on window resize (debounced for performance)
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                boardContainer.innerHTML = '';
+                letterElements = [];
+                positionLetters();
+                lazyLoadImages();
+            }, 300);
+        });
+    </script>
+</body>
+</html>
